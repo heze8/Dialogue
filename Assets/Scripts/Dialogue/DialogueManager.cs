@@ -50,8 +50,22 @@ public class DialogueManager : MonoBehaviour
 
     private string FormatOutput(string dialogueInput, int indexOfError)
     {
-        string errorText = dialogueInput.Substring(indexOfError);
-        
+        if (dialogueInput.Length == indexOfError)
+        {
+            return dialogueInput;
+        }
+
+        string errorText = null;
+            
+        try
+        {
+            errorText = dialogueInput.Substring(indexOfError);
+        }
+        catch (ArgumentOutOfRangeException e)
+        {
+                Debug.LogError(dialogueInput + " " + indexOfError);
+        }
+
         if (!errorText.Any())
         {
             return dialogueInput;

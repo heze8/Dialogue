@@ -8,7 +8,7 @@ using UnityEngine;
 [System.Serializable]
 public class Typing
 {
-    private readonly StringBuilder myDialogue;
+    private StringBuilder myDialogue;
     private int spaceBuffer = 0; //to prevent words from going out of screen.
     private int dialogueLength;
     private const int MaxWrongChars = 5;
@@ -71,20 +71,14 @@ public class Typing
         
         var sentenceChars = sentence.ToCharArray();
         dialogueLength = myDialogue.Length;
-        for (var i = 0; i < sentenceChars.Length; i++)
+        for (var i = 0; i < dialogueLength; i++)
         {
-            char c = sentenceChars[i];
-            if (i >= dialogueLength)
-            {
-                return sentenceChars.Length;
-            }
-            
-            if (!c.Equals(myDialogue[i]))
+            if (i >= sentenceChars.Length || !sentenceChars[i].Equals(myDialogue[i]))
             {
                 return i;
             }
         }
 
-        return sentenceChars.Length;
+        return dialogueLength;
     }
 }
