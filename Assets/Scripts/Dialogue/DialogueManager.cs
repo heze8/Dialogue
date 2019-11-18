@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,23 +12,29 @@ public class DialogueManager : MonoBehaviour
     [SerializeField]
     public List<string> sentences;
     private Typing typeManager;
-    public Text uiText;
-    private string currentDialogue;
+    public TextMeshPro outputText;
+    public TextMeshPro choices;
+    public float speakingRadius = 10f;
+    public LayerMask speakingLayer;
+    private string currentDialogueChoices;
+    private bool madeChoice;
 
     private void Start()
     {
         typeManager = new Typing();
-        GetNextDialogue();
+        GetNextDialogueChoices();
     }
 
-    private void GetNextDialogue()
+    private void GetNextDialogueChoices()
     {
         if (sentences.Count == 0)
         {
-            currentDialogue = "";
+            currentDialogueChoices = "No more choices";
+            choices.text = currentDialogueChoices;
             return;
         }
-        currentDialogue = sentences[0];
+        currentDialogueChoices = sentences[0];
+        choices.text = currentDialogueChoices;
         sentences.RemoveAt(0);
     }
 
@@ -42,29 +49,35 @@ public class DialogueManager : MonoBehaviour
     {
         string dialogueInput = typeManager.GetCurrentDialogueInput();
 
-        int indexOfError = typeManager.GetIndexOfError(currentDialogue);
+        int indexOfError = typeManager.GetIndexOfError(currentDialogueChoices);
 
         string formatOutput = FormatOutput(dialogueInput, indexOfError);
-        uiText.text = formatOutput;
+        outputText.text = formatOutput;
     }
 
+    /// <summary>
+    /// Causes the written input from the user to be coloured red based on the index of error.
+    /// </summary>
+    /// <param name="dialogueInput"></param>
+    /// <param name="indexOfError"></param>
+    /// <returns></returns>
     private string FormatOutput(string dialogueInput, int indexOfError)
     {
         if (dialogueInput.Length == indexOfError)
         {
+            if (currentDialogueChoices.Length == indexOfError)
+            {
+                madeChoice = true;
+            }
             return dialogueInput;
         }
 
+        madeChoice = false;
+        
         string errorText = null;
             
-        try
-        {
-            errorText = dialogueInput.Substring(indexOfError);
-        }
-        catch (ArgumentOutOfRangeException e)
-        {
-                Debug.LogError(dialogueInput + " " + indexOfError);
-        }
+        errorText = dialogueInput.Substring(indexOfError);
+
 
         if (!errorText.Any())
         {
@@ -85,7 +98,38 @@ public class DialogueManager : MonoBehaviour
     {
         foreach (char letter in Input.inputString)
         {
+            if (letter.Equals('\r') || letter.Equals('\n'))
+            {
+                onEnter();
+            }
             typeManager.TypeLetter(letter);
         }
+    }
+
+    private void onEnter()
+    {
+        if (madeChoice)
+        {
+            SpeakToNearby();
+            GetNextDialogueChoices();
+        }
+    }
+    
+    void SpeakToNearby()
+    {
+        Collider2D[] peopleToSpeakTo = Physics2D.OverlapCircleAll(gameObject.transform.position, speakingRadius, speakingLayer);
+        foreach (var people in peopleToSpeakTo)
+        {
+            var dialogueManager = people.GetComponent<DialogueManager>();
+            if (!dialogueManager.Equals(this))
+            {
+                dialogueManager.Speak(typeManager.GetCurrentDialogueInput());
+            }
+        }
+    }
+
+    public void Speak(String message)
+    {
+        outputText.text = "Shut up!";
     }
 }
