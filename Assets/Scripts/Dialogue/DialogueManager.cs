@@ -10,33 +10,19 @@ using UnityEngine.UI;
 public class DialogueManager : MonoBehaviour
 {
     [SerializeField]
-    public List<string> sentences;
     private Typing typeManager;
     public TextMeshPro outputText;
-    public TextMeshPro choices;
     public float speakingRadius = 10f;
     public LayerMask speakingLayer;
-    private string currentDialogueChoices;
-    private bool madeChoice;
+    private bool isSpeaking;
 
     private void Start()
     {
         typeManager = new Typing();
-        GetNextDialogueChoices();
+        isSpeaking = false;
     }
 
-    private void GetNextDialogueChoices()
-    {
-        if (sentences.Count == 0)
-        {
-            currentDialogueChoices = "No more choices";
-            choices.text = currentDialogueChoices;
-            return;
-        }
-        currentDialogueChoices = sentences[0];
-        choices.text = currentDialogueChoices;
-        sentences.RemoveAt(0);
-    }
+    
 
     private void Update()
     {
@@ -49,10 +35,10 @@ public class DialogueManager : MonoBehaviour
     {
         string dialogueInput = typeManager.GetCurrentDialogueInput();
 
-        int indexOfError = typeManager.GetIndexOfError(currentDialogueChoices);
+        //int indexOfError = typeManager.GetIndexOfError(currentDialogueChoices);
 
-        string formatOutput = FormatOutput(dialogueInput, indexOfError);
-        outputText.text = formatOutput;
+        //string formatOutput = FormatOutput(dialogueInput, indexOfError);
+        outputText.text = dialogueInput;//formatOutput;
     }
 
     /// <summary>
@@ -61,7 +47,7 @@ public class DialogueManager : MonoBehaviour
     /// <param name="dialogueInput"></param>
     /// <param name="indexOfError"></param>
     /// <returns></returns>
-    private string FormatOutput(string dialogueInput, int indexOfError)
+    /*private string FormatOutput(string dialogueInput, int indexOfError)
     {
         if (dialogueInput.Length == indexOfError)
         {
@@ -92,7 +78,7 @@ public class DialogueManager : MonoBehaviour
         formattedText.Append("</color>");
 
         return formattedText.ToString();
-    }
+    }*/
 
     private void Type()
     {
@@ -102,17 +88,24 @@ public class DialogueManager : MonoBehaviour
             {
                 onEnter();
             }
-            typeManager.TypeLetter(letter);
+            
+            if (isSpeaking)
+                typeManager.TypeLetter(letter);
         }
     }
 
     private void onEnter()
     {
-        if (madeChoice)
+        if (isSpeaking)
         {
             SpeakToNearby();
-            GetNextDialogueChoices();
+            isSpeaking = false;
+            typeManager.ClearDialogue();
         }
+        else 
+            isSpeaking = true;
+        //GetNextDialogueChoices();
+
     }
     
     void SpeakToNearby()
@@ -120,16 +113,37 @@ public class DialogueManager : MonoBehaviour
         Collider2D[] peopleToSpeakTo = Physics2D.OverlapCircleAll(gameObject.transform.position, speakingRadius, speakingLayer);
         foreach (var people in peopleToSpeakTo)
         {
-            var dialogueManager = people.GetComponent<DialogueManager>();
-            if (!dialogueManager.Equals(this))
-            {
+            var dialogueManager = people.gameObject.GetComponent<DialogueNPC>();
+            if (dialogueManager != null) 
                 dialogueManager.Speak(typeManager.GetCurrentDialogueInput());
-            }
         }
     }
 
     public void Speak(String message)
     {
         outputText.text = "Shut up!";
+    }
+    
+    /// <summary>
+    /// Method that returns the first index on which the error occurs in the first sentence compared to the second sentence.
+    /// </summary>
+    /// <param name="firstSentence"></param> sentence is the one where the error is found.
+    /// <param name="secondSentence"></param> sentence is the crosschecked sentence.
+    /// <returns></returns> the index by char of the error, returns the length of the string if no error.
+    public static int GetIndexOfError (string firstSentence, string secondSentence)
+    {
+        if (!secondSentence.Any()) return 0;
+        
+        var sentenceChars = secondSentence.ToCharArray();
+        int dialogueLength = firstSentence.Length;
+        for (var i = 0; i < dialogueLength; i++)
+        {
+            if (i >= sentenceChars.Length || !sentenceChars[i].Equals(firstSentence[i]))
+            {
+                return i;
+            }
+        }
+
+        return dialogueLength;
     }
 }

@@ -36,7 +36,7 @@ public class Typing
             //enter
             case '\n':
             case '\r':
-                myDialogue.Clear();
+                ClearDialogue();
                 spaceBuffer = 0;
                 break;
             
@@ -55,30 +55,13 @@ public class Typing
         }
     }
 
+    public void ClearDialogue()
+    {
+        myDialogue.Clear();
+    }
+
     public string GetCurrentDialogueInput()
     {
         return myDialogue.ToString();
-    }
-
-    /// <summary>
-    /// Method that returns the first index on which the error occurs in the sentence.
-    /// </summary>
-    /// <param name="sentence"></param> sentence is the DialogueSentence given.
-    /// <returns></returns> the index by char of the error, returns the length of the string if no error.
-    public int GetIndexOfError (string sentence)
-    {
-        if (!sentence.Any()) return 0;
-        
-        var sentenceChars = sentence.ToCharArray();
-        dialogueLength = myDialogue.Length;
-        for (var i = 0; i < dialogueLength; i++)
-        {
-            if (i >= sentenceChars.Length || !sentenceChars[i].Equals(myDialogue[i]))
-            {
-                return i;
-            }
-        }
-
-        return dialogueLength;
     }
 }
